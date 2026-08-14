@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ producto.nombre }} - {{ ajuste_wa.nombre_tienda if (ajuste_wa and ajuste_wa.nombre_tienda) else 'Alena' }}{% endblock %}
+
+{% block content %}
+<!-- Botón Volver -->
+<div class="mb-3">
+    <a href="/" class="btn btn-light border btn-sm shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i> Volver al catálogo
+    </a>
+</div>
+
+<!-- Tarjeta Principal del Producto -->
+<div class="card shadow-sm border-0 bg-white rounded-3 overflow-hidden">
+    <div class="card-body p-3 p-md-4">
+        
+        <!-- Contenedor en 2 columnas equilibradas -->
+        <div class="row g-4 align-items-stretch">
+            
+            <!-- Columna Izquierda: Galería Multimedia / Carrusel Centrado -->
+            <div class="col-12 col-lg-6 d-flex flex-column justify-content-center">
+                {% if producto.multimedia and producto.multimedia|length > 0 %}
+                    <div id="carruselProducto" class="carousel slide rounded-3 bg-dark overflow-hidden position-relative shadow-sm" data-bs-ride="carousel">
+                        
+                        <div class="carousel-inner" style="background-color: #121212;">
+                            {% for item in producto.multimedia %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %} text-center">
+                                    {% if item.tipo == 'imagen' %}
+                                        <img src="{{ item.url_o_ruta }}" class="img-fluid d-block mx-auto object-fit-contain" alt="{{ producto.nombre }}" style="max-height: 450px; min-height: 280px; width: 100%;">
+                                    {% elif item.tipo == 'video' %}
+                                        <video src="{{ item.url_o_ruta }}" controls class="w-100 d-block mx-auto" style="max-height: 450px; min-height: 280px;"></video>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Flechas de navegación (solo si hay más de 1 imagen/video) -->
+                        {% if producto.multimedia|length > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carruselProducto" data-bs-slide="prev" style="width: 12%;">
+                                <span class="carousel-control-prev-icon p-3 rounded-circle bg-dark bg-opacity-50" aria-hidden="true"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carruselProducto" data-bs-slide="next" style="width: 12%;">
+                                <span class="carousel-control-next-icon p-3 rounded-circle bg-dark bg-opacity-50" aria-hidden="true"></span>
+                                <span class="visually-hidden">Siguiente</span>
+                            </button>
+                        {% endif %}
+
+                    </div>
+                {% else %}
+                    <!-- Si no tiene multimedia -->
+                    <div class="bg-light rounded-3 d-flex align-items-center justify-content-center border" style="height: 380px;">
+                        <span class="text-muted"><i class="bi bi-image fs-1 d-block text-center mb-2"></i>Sin imagen disponible</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Columna Derecha: Información del Producto -->
+            <div class="col-12 col-lg-6 d-flex flex-column justify-content-between">
+                <div>
+                    <!-- Badge Categoría -->
+                    <span class="badge bg-primario px-3 py-2 rounded-3 mb-2 fw-semibold fs-7">
+                        {{ producto.categoria }}
+                    </span>
+
+                    <!-- Nombre del Producto -->
+                    <h1 class="fw-bold text-dark h2 mb-2">{{ producto.nombre }}</h1>
+
+                    <!-- Precio -->
+                    <div class="display-6 fw-bold text-primario mb-3">
+                        ${{ "%.2f"|format(producto.precio) }}
+                    </div>
+
+                    <!-- Descripción -->
+                    {% if producto.descripcion %}
+                        <p class="text-secondary fs-6 mb-4" style="white-space: pre-line;">{{ producto.descripcion }}</p>
+                    {% endif %}
+
+                    <!-- Caja de Especificaciones -->
+                    {% if producto.especificaciones and producto.especificaciones|length > 0 %}
+                        <div class="caja-especificaciones mb-4 bg-light p-3 rounded-3 border">
+                            <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-list-check me-2"></i>Especificaciones:</h6>
+                            <ul class="list-unstyled mb-0">
+                                {% for espec in producto.especificaciones %}
+                                    <li class="mb-2 text-dark">
+                                        <strong class="text-secondary">{{ espec.clave }}:</strong> {{ espec.valor }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Botón de WhatsApp -->
+                <div class="mt-3 pt-2 border-top">
+                    <a href="{{ wa_link }}" target="_blank" class="btn btn-primario btn-lg w-100 shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2 py-3 fs-5">
+                        <i class="bi bi-whatsapp fs-4"></i> Consultar por WhatsApp
+                    </a>
+                </div>
+            </div>
+
+        </div> <!-- Fin .row -->
+    </div>
+</div>
+{% endblock %}

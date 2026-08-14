@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- En celulares muestra 2 tarjetas por fila (row-cols-2) y en pantallas medianas 3 o 4 -->
+<div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-2 g-md-3">
+    {% for p in productos %}
+        <div class="col">
+            <a href="/producto/{{ p.id }}" class="card h-100 shadow-sm border-0 tarjeta-cliqueable">
+                
+                <!-- Contenedor de Imagen con alto adaptable -->
+                <div class="contenedor-imagen-tarjeta">
+                    {% if p.multimedia and p.multimedia|length > 0 %}
+                        {% set primer_media = p.multimedia[0] %}
+                        {% if primer_media.tipo == 'imagen' %}
+                            <img src="{{ primer_media.url_o_ruta }}" class="card-img-top img-adaptable" alt="{{ p.nombre }}">
+                        {% elif primer_media.tipo == 'video' %}
+                            <video src="{{ primer_media.url_o_ruta }}" class="card-img-top img-adaptable" muted></video>
+                        {% endif %}
+                    {% else %}
+                        <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center img-adaptable">
+                            <span class="small">Sin imagen</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body p-2 p-md-3 d-flex flex-column">
+                    <span class="badge bg-primario align-self-start mb-1 mb-md-2 small">{{ p.categoria }}</span>
+                    <h6 class="card-title text-truncate fw-bold mb-1 mb-md-2">{{ p.nombre }}</h6>
+                    <p class="card-text fw-bold text-primario fs-6 fs-md-5 mt-auto mb-0">${{ "%.2f"|format(p.precio) }}</p>
+                </div>
+            </a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

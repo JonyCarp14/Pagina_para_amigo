@@ -1,0 +1,239 @@
+/* ==========================================================================
+   1. VARIABLES DE COLORES PERSONALIZABLES (Soportan cambios dinámicos del Admin)
+   ========================================================================== */
+:root {
+    --color-primario: #00a859;       /* Color de acento primario (Botones, marca, insignias) */
+    --color-primario-hover: #008746; /* Estado hover para botones */
+    --color-fondo-base: #f4f6f8;     /* Fondo base del sitio */
+    --color-fondo-tarjeta: #ffffff;  /* Fondo de las tarjetas y contenedores */
+    --color-texto-oscuro: #212529;
+}
+
+/* ==========================================================================
+   2. ESTILOS GENERALES Y ESTRUCTURA BODY
+   ========================================================================== */
+body {
+    background-color: var(--color-fondo-base);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--color-texto-oscuro);
+}
+
+main {
+    flex: 1;
+}
+
+/* ==========================================================================
+   3. BARRA DE NAVEGACIÓN (NAVBAR)
+   ========================================================================== */
+.navbar-bazar {
+    background-color: #1f2326 !important; /* Fondo oscuro elegante */
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+/* Brand / Logo de la Tienda */
+.brand-bazar {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--color-primario) !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.brand-bazar:hover {
+    opacity: 0.85;
+}
+
+/* Enlaces de Navegación */
+.nav-link-bazar {
+    color: #ffffff !important;
+    font-weight: 500;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.nav-link-bazar:hover {
+    opacity: 0.85;
+}
+
+.nav-link-bazar.active-bazar {
+    color: #ffc107 !important; /* Amarillo para destacar el acceso al Panel Admin */
+}
+
+/* Botón Salir / Login */
+.btn-salir-bazar {
+    border: 1px solid #ffffff !important;
+    color: #ffffff !important;
+    border-radius: 6px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-salir-bazar:hover {
+    background-color: #ffffff !important;
+    color: #1f2326 !important;
+}
+
+/* ==========================================================================
+   4. CLASES UTILITARIAS Y BOTONES BASADOS EN LA VARIABLE PRIMARIA
+   ========================================================================== */
+.text-primario, 
+.text-success {
+    color: var(--color-primario) !important;
+}
+
+.bg-primario, 
+.bg-success {
+    background-color: var(--color-primario) !important;
+    color: #ffffff !important;
+}
+
+.btn-primario, 
+.btn-success {
+    background-color: var(--color-primario) !important;
+    border-color: var(--color-primario) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.btn-primario:hover, 
+.btn-success:hover {
+    background-color: var(--color-primario-hover) !important;
+    border-color: var(--color-primario-hover) !important;
+    color: #ffffff !important;
+    filter: brightness(0.95);
+}
+
+/* ==========================================================================
+   5. TARJETAS DEL CATÁLOGO (INDEX)
+   ========================================================================== */
+.tarjeta-cliqueable {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    background-color: var(--color-fondo-tarjeta);
+}
+
+.tarjeta-cliqueable:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.img-adaptable {
+    height: 200px;
+    width: 100%;
+    object-fit: cover; /* Recorta proporcionalmente la imagen */
+}
+
+/* ==========================================================================
+   6. CARRUSEL Y PÁGINA DE DETALLE (DETALLE.HTML)
+   ========================================================================== */
+#carruselProducto {
+    min-height: 280px;
+    background-color: #121212;
+}
+
+#carruselProducto .carousel-item {
+    background-color: #121212;
+}
+
+.img-carrusel-responsive {
+    max-height: 450px;
+    min-height: 280px;
+    width: 100%;
+    object-fit: contain; /* Preserva la relación de aspecto de la foto sin deformarla */
+    margin: 0 auto;
+}
+
+/* Flechas flotantes del Carrusel */
+.carousel-control-prev,
+.carousel-control-next {
+    opacity: 0.85;
+    z-index: 5;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    opacity: 1;
+}
+
+/* Caja de Especificaciones */
+.caja-especificaciones {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.25rem;
+}
+
+/* ==========================================================================
+   7. EDICIÓN MULTIMEDIA Y GALERÍA EN ADMIN
+   ========================================================================== */
+.galeria-edicion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.tarjeta-media-edicion {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+}
+
+.media-preview {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+/* ==========================================================================
+   8. PIE DE PÁGINA / FOOTER
+   ========================================================================== */
+.footer-bazar {
+    background-color: #1f2326;
+    color: #b0b5ba;
+    font-size: 0.88rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================================================
+   9. REGLAS RESPONSIVE PARA CELULARES (PANTALLAS PEQUEÑAS)
+   ========================================================================== */
+@media (max-width: 576px) {
+    /* Ajusta las tarjetas en celulares para que entren 2 por fila cómodamente */
+    .img-adaptable {
+        height: 130px;
+    }
+
+    /* Reduce la altura del carrusel en celulares para no ocupar toda la pantalla */
+    .img-carrusel-responsive {
+        max-height: 280px;
+        min-height: 200px;
+    }
+
+    /* Reduce padding en tarjetas pequeñas */
+    .card-body {
+        padding: 0.75rem !important;
+    }
+
+    /* Ajusta tipografías para títulos en pantallas chicas */
+    h1, .display-6 {
+        font-size: 1.4rem !important;
+    }
+}

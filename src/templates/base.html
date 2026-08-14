@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ ajuste_wa.nombre_tienda if (ajuste_wa and ajuste_wa.nombre_tienda) else 'Alena Mdza' }}{% endblock %}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+    :root {
+        --color-primario: {{ ajuste_wa.color_primario if (ajuste_wa and ajuste_wa.color_primario) else '#00a859' }};
+        --color-fondo-base: {{ ajuste_wa.color_fondo if (ajuste_wa and ajuste_wa.color_fondo) else '#f4f6f8' }};
+        --url-fondo: {% if ajuste_wa and ajuste_wa.imagen_fondo_url %}url("{{ ajuste_wa.imagen_fondo_url }}"){% else %}none{% endif %};
+    }
+
+    /* Fondo general */
+    body {
+        background-color: var(--color-fondo-base);
+        background-image: var(--url-fondo);
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    main {
+        flex: 1;
+    }
+
+    /* Colores primarios dinámicos */
+    .brand-bazar, .text-primario, .text-success {
+        color: var(--color-primario) !important;
+    }
+
+    .bg-primario, .bg-success, .btn-success {
+        background-color: var(--color-primario) !important;
+        border-color: var(--color-primario) !important;
+    }
+
+    .btn-success:hover {
+        filter: brightness(0.9);
+    }
+
+    /* Categoría activa en el menú lateral */
+    .offcanvas .text-success {
+        color: var(--color-primario) !important;
+    }
+
+    /* Pie de página */
+    .footer-bazar {
+        background-color: #1f2326;
+        color: #b0b5ba;
+        font-size: 0.88rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+</style>
+</head>
+<body>
+
+    <!-- NAVBAR PRINCIPAL -->
+    <nav class="navbar navbar-dark navbar-bazar shadow-sm sticky-top">
+        <div class="container-fluid px-lg-5">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-light border-0 fs-4 py-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuCategorias">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <!-- LOGO Y NOMBRE DE LA TIENDA -->
+                <a class="brand-bazar" href="/">
+                    {% if ajuste_wa and ajuste_wa.logo_url %}
+                        <img src="{{ ajuste_wa.logo_url }}" alt="Logo" class="rounded" style="height: 35px; width: auto; object-fit: contain;">
+                    {% else %}
+                        <i class="bi bi-shop fs-3"></i>
+                    {% endif %}
+                    <span>{{ ajuste_wa.nombre_tienda if (ajuste_wa and ajuste_wa.nombre_tienda) else 'Alena Mdza' }}</span>
+                </a>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <a href="/" class="nav-link-bazar">Catálogo</a>
+                {% if session.get('es_admin') %}
+                    <a href="/admin" class="nav-link-bazar active-bazar fw-bold">
+                        <i class="bi bi-speedometer2 me-1"></i> Panel Admin
+                    </a>
+                    <a href="/admin/logout" class="btn-salir-bazar">Salir</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- MENÚ LATERAL (Offcanvas) -->
+    <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="menuCategorias">
+        <div class="offcanvas-header border-bottom border-secondary">
+            <h5 class="offcanvas-title fw-bold text-success">
+                <i class="bi bi-funnel me-2"></i>Filtros y Categorías
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="GET" action="/" class="mb-4">
+                <label class="form-label text-muted small fw-bold">BUSCAR PRODUCTO</label>
+                <div class="input-group">
+                    <input type="text" name="q" value="{{ q_actual if q_actual else '' }}" class="form-control" placeholder="Escribí un nombre...">
+                    <button type="submit" class="btn btn-success"><i class="bi bi-search"></i></button>
+                </div>
+            </form>
+
+            <hr class="border-secondary mb-4">
+
+            <label class="form-label text-muted small fw-bold mb-3">CATEGORÍAS DISPONIBLES</label>
+            <div class="list-group list-group-flush">
+                <a href="/" class="list-group-item list-group-item-action bg-transparent text-white border-0 px-0 {% if not cat_actual %}fw-bold text-success{% endif %}">
+                    <i class="bi bi-grid-fill me-2"></i>Todos los productos
+                </a>
+                {% for cat in categorias %}
+                    <a href="/?categoria={{ cat }}" 
+                       class="list-group-item list-group-item-action bg-transparent text-white border-0 px-0 d-flex justify-content-between align-items-center {% if cat == cat_actual %}fw-bold text-success{% endif %}">
+                       <span><i class="bi bi-tag me-2"></i>{{ cat }}</span>
+                       <i class="bi bi-chevron-right small"></i>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO DE LA PÁGINA -->
+    <main class="container py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- PIE DE PÁGINA / FIRMA DIGITAL (Estática) -->
+    <footer class="footer-bazar py-3 mt-auto">
+        <div class="container text-center">
+            <p class="m-0 mb-1">
+                Todos los derechos reservados a <strong>MCC</strong> &copy; 2026
+            </p>
+            <p class="m-0 small text-muted">
+                <a href="https://presentacion-delta-khaki.vercel.app/" target="_blank" class="text-light fw-bold text-decoration-none">Contacte al creador de la Web</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

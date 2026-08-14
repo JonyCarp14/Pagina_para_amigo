@@ -1,0 +1,24 @@
+# --- VARIABLES DE ENTORNO Y SECRETOS ---
+.env
+.env.local
+.env.*.local
+
+# --- ARCHIVOS DE PYTHON / CACHÉ ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# --- ARCHIVOS SUBIDOS POR USUARIOS (Media/Uploads) ---
+src/static/uploads/*
+!src/static/uploads/.gitkeep
+
+# --- IDEs Y BASES DE DATOS LOCALES ---
+.vscode/
+.idea/
+*.sqlite3
+*.db

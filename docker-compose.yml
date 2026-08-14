@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER:-admin_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-admin_pass}
+      - POSTGRES_DB=${DB_NAME:-tienda_db}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  
+
+  web:
+    build: .
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-admin_user}:${DB_PASSWORD:-admin_pass}@db:5432/${DB_NAME:-tienda_db}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+    depends_on:
+      - db
+    volumes:
+      - ./src/static/uploads:/app/src/static/uploads 
+
+volumes:
+  postgres_data: 
