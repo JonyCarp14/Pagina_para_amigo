@@ -9,6 +9,8 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import cloudinary
+import cloudinary.uploader
 
 load_dotenv()
 app = Flask(__name__)
@@ -24,6 +26,11 @@ if db_uri and db_uri.startswith("postgres://"):
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
+
+# Configuración automática de Cloudinary mediante la variable de entorno
+cloudinary.config(
+    cloudinary_url=os.getenv('CLOUDINARY_URL')
+)
 
 # Límites de archivos y directorios de carga
 app.config['MAX_CONTENT_LENGTH'] = 512 * 1024 * 1024
@@ -90,15 +97,28 @@ def guardar_archivos_producto(producto_id, archivos_locales, url_externa):
             tipo, ext = obtener_tipo_archivo(archivo.filename)
             
             if tipo and ext:
-                nombre_unico = f"{uuid.uuid4().hex}.{ext}"
-                ruta_guardado = os.path.join(app.config['UPLOAD_FOLDER'], nombre_unico)
-                archivo.save(ruta_guardado)
+                cloudinary_env = os.getenv('CLOUDINARY_URL')
+                
+                if cloudinary_env:
+                    # Subida a Cloudinary (Almacenamiento persistente en la nube)
+                    resource_type = "video" if tipo == "video" else "image"
+                    resultado = cloudinary.uploader.upload(
+                        archivo, 
+                        folder="alena_tienda/productos", 
+                        resource_type=resource_type
+                    )
+                    ruta_web = resultado.get("secure_url")
+                else:
+                    # Subida local (Fallback para desarrollo local)
+                    nombre_unico = f"{uuid.uuid4().hex}.{ext}"
+                    ruta_guardado = os.path.join(app.config['UPLOAD_FOLDER'], nombre_unico)
+                    archivo.save(ruta_guardado)
+                    ruta_web = f"/static/uploads/{nombre_unico}"
 
-                ruta_web = f"/static/uploads/{nombre_unico}"
                 nuevo_media = Media(url_o_ruta=ruta_web, tipo=tipo, producto_id=producto_id)
                 db.session.add(nuevo_media)
 
-    # Procesar URL externa si existe
+    # Procesar URL externa si fue proporcionada
     if url_externa and url_externa.strip() != '':
         tipo_url = 'video' if any(e in url_externa.lower() for e in ['.mp4', 'youtube', 'vimeo']) else 'imagen'
         nuevo_media_url = Media(url_o_ruta=url_externa.strip(), tipo=tipo_url, producto_id=producto_id)
@@ -205,12 +225,18 @@ def guardar_ajustes_wa():
     else:
         logo_file = request.files.get('logo_file')
         if logo_file and logo_file.filename != '':
-            tipo, ext = obtener_tipo_archivo(logo_file.filename)
-            if ext:
-                nombre_logo = f"logo_{uuid.uuid4().hex}.{ext}"
-                ruta_logo = os.path.join(app.config['UPLOAD_FOLDER'], nombre_logo)
-                logo_file.save(ruta_logo)
-                ajuste.logo_url = f"/static/uploads/{nombre_logo}"
+            if os.getenv('CLOUDINARY_URL'):
+                # Subida a Cloudinary
+                res = cloudinary.uploader.upload(logo_file, folder="alena_tienda/ajustes")
+                ajuste.logo_url = res.get("secure_url")
+            else:
+                # Subida local por si estás probando sin internet/sin clave
+                tipo, ext = obtener_tipo_archivo(logo_file.filename)
+                if ext:
+                    nombre_logo = f"logo_{uuid.uuid4().hex}.{ext}"
+                    ruta_logo = os.path.join(app.config['UPLOAD_FOLDER'], nombre_logo)
+                    logo_file.save(ruta_logo)
+                    ajuste.logo_url = f"/static/uploads/{nombre_logo}"
 
     # 2. Procesar Fondo (Eliminar, Subir Archivo o URL Externa)
     eliminar_fondo = request.form.get('eliminar_fondo')
@@ -221,12 +247,18 @@ def guardar_ajustes_wa():
         imagen_fondo_url_text = request.form.get('imagen_fondo_url', '').strip()
 
         if imagen_fondo_file and imagen_fondo_file.filename != '':
-            tipo, ext = obtener_tipo_archivo(imagen_fondo_file.filename)
-            if ext:
-                nombre_unico = f"bg_{uuid.uuid4().hex}.{ext}"
-                ruta = os.path.join(app.config['UPLOAD_FOLDER'], nombre_unico)
-                imagen_fondo_file.save(ruta)
-                ajuste.imagen_fondo_url = f"/static/uploads/{nombre_unico}"
+            if os.getenv('CLOUDINARY_URL'):
+                # Subida a Cloudinary
+                res = cloudinary.uploader.upload(imagen_fondo_file, folder="alena_tienda/ajustes")
+                ajuste.imagen_fondo_url = res.get("secure_url")
+            else:
+                # Subida local
+                tipo, ext = obtener_tipo_archivo(imagen_fondo_file.filename)
+                if ext:
+                    nombre_unico = f"bg_{uuid.uuid4().hex}.{ext}"
+                    ruta = os.path.join(app.config['UPLOAD_FOLDER'], nombre_unico)
+                    imagen_fondo_file.save(ruta)
+                    ajuste.imagen_fondo_url = f"/static/uploads/{nombre_unico}"
         elif imagen_fondo_url_text:
             ajuste.imagen_fondo_url = imagen_fondo_url_text
 
@@ -324,7 +356,6 @@ def eliminar_media(media_id):
 if __name__ == "__main__":
     debug_mode = os.getenv("FLASK_DEBUG", "True").lower() in ("true", "1", "t")
     app.run(host="0.0.0.0", port=5000, debug=debug_mode)
-    
     
     
     
