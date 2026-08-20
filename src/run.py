@@ -11,9 +11,21 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import cloudinary
 import cloudinary.uploader
+import re
 
 load_dotenv()
 app = Flask(__name__)
+
+#Configuracion para que sea mas entendible el precio
+@app.template_filter('formato_precio')
+def formato_precio(valor):
+    try:
+        val = float(valor)
+        # Formatea con comas de miles y punto decimal: 1,500,000.00
+        # Luego invierte los signos: punto para miles, coma para decimales -> 1.500.000,00
+        return f"{val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except (ValueError, TypeError):
+        return valor
 
 # Configuración de Clave Secreta unificada
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-super-segura')
@@ -88,6 +100,43 @@ with app.app_context():
             admin.es_admin = True
             db.session.commit()
             print(f"-> Credenciales de '{admin_user}' actualizadas desde el entorno.")
+            
+def eliminar_archivo_media(url_o_ruta, tipo='imagen'):
+    if not url_o_ruta:
+        return
+
+    # Si es una URL de Cloudinary
+    if "cloudinary.com" in url_o_ruta:
+        try:            
+            # Obtenemos todo lo que está después de '/upload/'
+            partes = url_o_ruta.split('/upload/')
+            if len(partes) > 1:
+                ruta_despues_upload = partes[1]
+                
+                # Si empieza con versión tipo 'v12345678/', la removemos
+                ruta_sin_version = re.sub(r'^v\d+/', '', ruta_despues_upload)
+                
+                # Removemos la extensión del final (.jpg, .png, .mp4, etc.)
+                public_id = re.sub(r'\.[a-zA-Z0-9]+$', '', ruta_sin_version)
+                
+                resource_type = "video" if tipo == "video" else "image"
+                
+                # Llamamos a Cloudinary
+                res = cloudinary.uploader.destroy(public_id, resource_type=resource_type, invalidate=True)
+                print(f"[CLOUDINARY DELETE] ID: {public_id} | Resultado: {res}")
+        except Exception as e:
+            print(f"[CLOUDINARY ERROR] al eliminar {url_o_ruta}: {e}")
+
+    # Si es un archivo local
+    elif url_o_ruta.startswith('/static/uploads/'):
+        nombre_archivo = url_o_ruta.replace('/static/uploads/', '')
+        ruta_fisica = os.path.join(app.config['UPLOAD_FOLDER'], nombre_archivo)
+        if os.path.exists(ruta_fisica):
+            try:
+                os.remove(ruta_fisica)
+                print(f"[LOCAL DELETE] Eliminado: {ruta_fisica}")
+            except Exception as e:
+                print(f"[LOCAL ERROR] al eliminar archivo local: {e}")
 
 def obtener_tipo_archivo(nombre_archivo):
     ext = nombre_archivo.rsplit('.', 1)[-1].lower() if '.' in nombre_archivo else ''
@@ -227,16 +276,20 @@ def guardar_ajustes_wa():
     # 1. Procesar Logo (Eliminar o Subir Nuevo)
     eliminar_logo = request.form.get('eliminar_logo')
     if eliminar_logo:
+        if ajuste.logo_url:
+            eliminar_archivo_media(ajuste.logo_url, 'imagen')
         ajuste.logo_url = ""
     else:
         logo_file = request.files.get('logo_file')
         if logo_file and logo_file.filename != '':
+            # Borrar el logo anterior antes de asignar el nuevo
+            if ajuste.logo_url:
+                eliminar_archivo_media(ajuste.logo_url, 'imagen')
+
             if os.getenv('CLOUDINARY_URL'):
-                # Subida a Cloudinary
                 res = cloudinary.uploader.upload(logo_file, folder="alena_tienda/ajustes")
                 ajuste.logo_url = res.get("secure_url")
             else:
-                # Subida local por si estás probando sin internet/sin clave
                 tipo, ext = obtener_tipo_archivo(logo_file.filename)
                 if ext:
                     nombre_logo = f"logo_{uuid.uuid4().hex}.{ext}"
@@ -247,18 +300,22 @@ def guardar_ajustes_wa():
     # 2. Procesar Fondo (Eliminar, Subir Archivo o URL Externa)
     eliminar_fondo = request.form.get('eliminar_fondo')
     if eliminar_fondo:
+        if ajuste.imagen_fondo_url:
+            eliminar_archivo_media(ajuste.imagen_fondo_url, 'imagen')
         ajuste.imagen_fondo_url = ""
     else:
         imagen_fondo_file = request.files.get('imagen_fondo_file')
         imagen_fondo_url_text = request.form.get('imagen_fondo_url', '').strip()
 
         if imagen_fondo_file and imagen_fondo_file.filename != '':
+            # Borrar el fondo anterior antes de asignar el nuevo
+            if ajuste.imagen_fondo_url:
+                eliminar_archivo_media(ajuste.imagen_fondo_url, 'imagen')
+
             if os.getenv('CLOUDINARY_URL'):
-                # Subida a Cloudinary
                 res = cloudinary.uploader.upload(imagen_fondo_file, folder="alena_tienda/ajustes")
                 ajuste.imagen_fondo_url = res.get("secure_url")
             else:
-                # Subida local
                 tipo, ext = obtener_tipo_archivo(imagen_fondo_file.filename)
                 if ext:
                     nombre_unico = f"bg_{uuid.uuid4().hex}.{ext}"
@@ -266,6 +323,9 @@ def guardar_ajustes_wa():
                     imagen_fondo_file.save(ruta)
                     ajuste.imagen_fondo_url = f"/static/uploads/{nombre_unico}"
         elif imagen_fondo_url_text:
+            # Si cambia a una URL externa y la anterior era un archivo de Cloudinary/local
+            if ajuste.imagen_fondo_url and ajuste.imagen_fondo_url != imagen_fondo_url_text:
+                eliminar_archivo_media(ajuste.imagen_fondo_url, 'imagen')
             ajuste.imagen_fondo_url = imagen_fondo_url_text
 
     db.session.commit()
@@ -306,6 +366,15 @@ def eliminar(id):
     if not session.get('es_admin'):
         return redirect('/admin/login')
     p = Producto.query.get_or_404(id)
+    
+    # Buscar todos los archivos multimedia asociados al producto
+    archivos_media = Media.query.filter_by(producto_id=p.id).all()
+    
+    # Borrar cada archivo de Cloudinary/local y de la base de datos
+    for media in archivos_media:
+        eliminar_archivo_media(media.url_o_ruta, media.tipo)
+        db.session.delete(media)
+    
     db.session.delete(p)
     db.session.commit()
     return redirect("/admin")
@@ -349,11 +418,8 @@ def eliminar_media(media_id):
     item_media = Media.query.get_or_404(media_id)
     producto_id = item_media.producto_id
     
-    if item_media.url_o_ruta.startswith('/static/uploads/'):
-        nombre_archivo = item_media.url_o_ruta.replace('/static/uploads/', '')
-        ruta_fisica = os.path.join(app.config['UPLOAD_FOLDER'], nombre_archivo)
-        if os.path.exists(ruta_fisica):
-            os.remove(ruta_fisica)
+    # Elimina el archivo de Cloudinary o local
+    eliminar_archivo_media(item_media.url_o_ruta, item_media.tipo)
             
     db.session.delete(item_media)
     db.session.commit()

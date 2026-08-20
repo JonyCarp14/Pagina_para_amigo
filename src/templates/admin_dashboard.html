@@ -52,7 +52,7 @@
                                 <small class="text-muted">Stock: {{ p.stock }}</small>
                             </td>
                             <td><span class="badge bg-light text-secondary border">{{ p.categoria }}</span></td>
-                            <td class="fw-bold text-success">${{ "%.2f"|format(p.precio) }}</td>
+                            <td class="fw-bold text-success">${{ p.precio | formato_precio }}</td>
                             <td class="text-center">
                                 <a href="/editar_prod/{{ p.id }}" class="btn btn-outline-primary btn-sm me-1"><i class="bi bi-pencil"></i></a>
                                 <form action="/eliminar_prod/{{ p.id }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar producto?')">
